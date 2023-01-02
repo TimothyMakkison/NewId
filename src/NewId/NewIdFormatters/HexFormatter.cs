@@ -1,4 +1,12 @@
-﻿namespace MassTransit.NewIdFormatters
+﻿#if NET6_0_OR_GREATER
+using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+#endif
+
+namespace MassTransit.NewIdFormatters
 {
     public class HexFormatter :
         INewIdFormatter
@@ -12,6 +20,25 @@
 
         public string Format(in byte[] bytes)
         {
+#if NET6_0_OR_GREATER
+            if (Avx2.IsSupported && BitConverter.IsLittleEndian)
+            {
+                return string.Create(32, (bytes, _alpha == 'A'), (span, state) =>
+                {
+                    var (bytes, isUpper) = state;
+
+                    var inputVec = MemoryMarshal.Read<Vector128<byte>>(bytes);
+                    var hexVec = IntrinsicsHelper.EncodeBytesHex(inputVec, isUpper);
+
+                    var lowerPadded = IntrinsicsHelper.ToCharUtf16(hexVec.GetLower());
+                    var upperPadded = IntrinsicsHelper.ToCharUtf16(hexVec.GetUpper());
+
+                    var spanBytes = MemoryMarshal.Cast<char, byte>(span);
+                    MemoryMarshal.Write(spanBytes, ref lowerPadded);
+                    MemoryMarshal.Write(spanBytes[32..], ref upperPadded);
+                });
+            }
+#endif
             var result = new char[32];
 
             var offset = 0;
@@ -25,7 +52,7 @@
             return new string(result, 0, 32);
         }
 
-        static char HexToChar(int value, int alpha)
+        private static char HexToChar(int value, int alpha)
         {
             value &= 0xf;
             return (char)(value > 9 ? value - 10 + alpha : value + 0x30);

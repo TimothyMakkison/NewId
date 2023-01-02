@@ -58,17 +58,23 @@
         //    return NewId.FromSequentialGuid(Guid);
         //}
 
-        [Benchmark]
-        public string ToString()
-        {
-            return Max.ToString();
-        }
+        //[Benchmark]
+        //public string ToString()
+        //{
+        //    return Max.ToString();
+        //}
 
         [Benchmark]
-        public string ToStringBrackets()
+        public string ToStringHex()
         {
-            return Max.ToString("");
+            return Max.ToString("D");
         }
+
+        //[Benchmark]
+        //public string ToStringBrackets()
+        //{
+        //    return Max.ToString("");
+        //}
 
         //[Benchmark]
         //public byte[] GetFormatterArray()

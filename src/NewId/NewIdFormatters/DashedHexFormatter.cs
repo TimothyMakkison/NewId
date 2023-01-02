@@ -35,7 +35,7 @@ namespace MassTransit.NewIdFormatters
         public string Format(in byte[] bytes)
         {
 #if NET6_0_OR_GREATER
-            if (Avx2.IsSupported)
+            if (Avx2.IsSupported && BitConverter.IsLittleEndian)
             {
                 return string.Create(_length, (bytes, _alpha, _prefix, _suffix), (span, st) =>
                 {
@@ -52,22 +52,22 @@ namespace MassTransit.NewIdFormatters
                         0x00, 0x00, 0x2d, 0x00, 0x00, 0x00, 0x00, 0x2d,
                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
-                    var lowerCharSet = Vector256.Create((byte)'0', (byte)'1', (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6', (byte)'7', (byte)'8', (byte)'9', (byte)'a', (byte)'b', (byte)'c', (byte)'d', (byte)'e', (byte)'f', (byte)'0', (byte)'1', (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6', (byte)'7', (byte)'8', (byte)'9', (byte)'a', (byte)'b', (byte)'c', (byte)'d', (byte)'e', (byte)'f');
 
-                    var upperCharSet = Vector256.Create((byte)'0', (byte)'1', (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6', (byte)'7', (byte)'8', (byte)'9', (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', (byte)'0', (byte)'1', (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6', (byte)'7', (byte)'8', (byte)'9', (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F');
-
-                    var a = EncodeBytes16(Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetArrayDataReference<byte>(state)), _alpha == 'A'? upperCharSet : lowerCharSet);
+                    var a = IntrinsicsHelper.EncodeBytesHex(Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetArrayDataReference<byte>(state)), _alpha == 'A');
 
                     var a1 = Avx2.Shuffle(a, swizzle);
                     var a2 = Avx2.Or(a1, dash);
 
-                    var padMask = Vector256.Create((byte)0, 0xFF, 1, 0xFF, 2, 0xFF, 3, 0xFF, 4, 0xFF, 5, 0xFF, 6, 0xFF, 7, 0xFF, 8, 0xFF, 9, 0xFF, 10, 0xFF, 11, 0xFF, 12, 0xFF, 13, 0xFF, 14, 0xFF, 15, 0xFF);
+                    //var padMask = Vector256.Create((byte)0, 0xFF, 1, 0xFF, 2, 0xFF, 3, 0xFF, 4, 0xFF, 5, 0xFF, 6, 0xFF, 7, 0xFF, 8, 0xFF, 9, 0xFF, 10, 0xFF, 11, 0xFF, 12, 0xFF, 13, 0xFF, 14, 0xFF, 15, 0xFF);
 
-                    var lower = Avx2.Permute2x128(a2, a2, 0b10_00_00);
-                    var upper = Avx2.Permute2x128(a2, a2, 0b11_00_01);
+                    //var lower = Avx2.Permute2x128(a2, a2, 0b10_00_00);
+                    //var upper = Avx2.Permute2x128(a2, a2, 0b11_00_01);
 
-                    var lowerPadded = Avx2.Shuffle(lower, padMask);
-                    var upperPadded = Avx2.Shuffle(upper, padMask);
+                    //var lowerPadded = Avx2.Shuffle(lower, padMask);
+                    //var upperPadded = Avx2.Shuffle(upper, padMask);
+
+                    var lowerPadded = IntrinsicsHelper.ToCharUtf16(a2.GetLower());
+                    var upperPadded = IntrinsicsHelper.ToCharUtf16(a2.GetUpper());
 
                     var charSpan = span.Length == 38 ? span[1..^1] : span;
                     var spanBytes = MemoryMarshal.Cast<char, byte>(charSpan);
@@ -87,12 +87,6 @@ namespace MassTransit.NewIdFormatters
                         span[0] = _prefix;
                         span[^1] = _suffix;
                     }
-
-                    //var b0 = a.GetLower().AsUInt16().GetElement(7);
-                    //MemoryMarshal.TryWrite(spanBytes[16..], b0);
-
-                    //var b1 = a.GetUpper().AsUInt32().GetElement(3);
-                    //MemoryMarshal.TryWrite(span[32..], b1);
                 });
             }
 
@@ -165,18 +159,6 @@ namespace MassTransit.NewIdFormatters
             throw new NotImplementedException();
         }
 
-
-#if NET6_0_OR_GREATER
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Vector256<byte> EncodeBytes16(Vector128<byte> bytes, Vector256<byte> lut)
-        {
-            var x = Avx2.ConvertToVector256Int16(bytes);
-            var high = Avx2.ShiftLeftLogical(x, 8);
-            var low = Avx2.ShiftRightLogical(x, 4);
-            var values = Avx2.And(Avx2.Or(high, low).AsByte(), Vector256.Create((byte)0x0F));
-            return Avx2.Shuffle(lut, values);
-        }
-#endif
 
         static char HexToChar(int value, int alpha)
         {
