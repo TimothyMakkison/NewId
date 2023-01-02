@@ -58,11 +58,17 @@
         //    return NewId.FromSequentialGuid(Guid);
         //}
 
-        //[Benchmark]
-        //public string ToStringBefore()
-        //{
-        //    return Max.ToString();
-        //}
+        [Benchmark]
+        public string ToString()
+        {
+            return Max.ToString();
+        }
+
+        [Benchmark]
+        public string ToStringBrackets()
+        {
+            return Max.ToString("");
+        }
 
         //[Benchmark]
         //public byte[] GetFormatterArray()
@@ -70,38 +76,38 @@
         //    return Max.GetSequentialFormatterArray();
         //}
 
-        [Benchmark]
-        public Guid NextGuid()
-        {
-            return NewId.NextGuid();
-        }
+        //[Benchmark]
+        //public Guid NextGuid()
+        //{
+        //    return NewId.NextGuid();
+        //}
 
-        [Benchmark]
-        public Guid NextGuidBulk()
-        {
-            Guid g;
-            for (int i = 0; i < 100_000; i++)
-            {
-                g = NewId.NextGuid();
-            }
-            return NewId.NextGuid();
-        }
+        //[Benchmark]
+        //public Guid NextGuidBulk()
+        //{
+        //    Guid g;
+        //    for (int i = 0; i < 100_000; i++)
+        //    {
+        //        g = NewId.NextGuid();
+        //    }
+        //    return NewId.NextGuid();
+        //}
 
-        [Benchmark]
-        public Guid NextSequentialGuid()
-        {
-            return NewId.NextSequentialGuid();
-        }
+        //[Benchmark]
+        //public Guid NextSequentialGuid()
+        //{
+        //    return NewId.NextSequentialGuid();
+        //}
 
-        [Benchmark]
-        public Guid NextSequentialGuidBulk()
-        {
-            Guid g;
-            for (int i = 0; i < 100_000; i++)
-            {
-                g = NewId.NextSequentialGuid();
-            }
-            return NewId.NextSequentialGuid();
-        }
+        //[Benchmark]
+        //public Guid NextSequentialGuidBulk()
+        //{
+        //    Guid g;
+        //    for (int i = 0; i < 100_000; i++)
+        //    {
+        //        g = NewId.NextSequentialGuid();
+        //    }
+        //    return NewId.NextSequentialGuid();
+        //}
     }
 }
