@@ -51,6 +51,15 @@ namespace MassTransit
             if (bytes.Length != 16)
                 throw new ArgumentException("Exactly 16 bytes expected", nameof(bytes));
 
+#if NET6_0_OR_GREATER
+            if (Sse3.IsSupported)
+            {
+                FromByteSpan(bytes, out NewId newId);
+                this = newId;
+                return;
+            }
+#endif
+
             FromByteArray(bytes, out _a, out _b, out _c, out _d);
         }
 
@@ -60,6 +69,18 @@ namespace MassTransit
                 throw new ArgumentException("must not be null or empty", nameof(value));
 
             var guid = new Guid(value);
+#if NET6_0_OR_GREATER
+            if (Sse3.IsSupported)
+            {
+                Span<Guid> span = stackalloc Guid[1];
+                span[0] = guid;
+                var byteSpan = MemoryMarshal.Cast<Guid, byte>(span);
+
+                FromByteSpan(byteSpan, out NewId newId);
+                this = newId;
+                return;
+            }
+#endif
 
             var bytes = guid.ToByteArray();
 
