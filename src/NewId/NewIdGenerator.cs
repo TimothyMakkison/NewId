@@ -92,14 +92,14 @@
             // swapping high and low byte, because SQL-server is doing the wrong ordering otherwise
             var sequenceSwapped = ((sequence << 8) | ((sequence >> 8) & 0x00FF)) & 0xFFFF;
 
-//#if NET6_0_OR_GREATER
-//            if (Ssse3.IsSupported && BitConverter.IsLittleEndian)
-//            {
-//                var vec = Vector128.Create((int)a, b, _c, _d | sequenceSwapped);
-//                var result = Ssse3.Shuffle(vec.AsByte(), Vector128.Create((byte)12, 13, 14, 15, 8, 9, 10, 11, 5, 4, 3, 2, 1, 0, 7, 6));
-//                return Unsafe.As<Vector128<byte>, Guid>(ref result);
-//            }
-//#endif
+#if NET6_0_OR_GREATER
+            if (Ssse3.IsSupported && BitConverter.IsLittleEndian)
+            {
+                var vec = Vector128.Create((int)a, b, _c, _d | sequenceSwapped);
+                var result = Ssse3.Shuffle(vec.AsByte(), Vector128.Create((byte)12, 13, 14, 15, 8, 9, 10, 11, 5, 4, 3, 2, 1, 0, 7, 6));
+                return Unsafe.As<Vector128<byte>, Guid>(ref result);
+            }
+#endif
 
             var d = (byte)(b >> 8);
             var e = (byte)b;
@@ -137,14 +137,14 @@
             // swapping high and low byte, because SQL-server is doing the wrong ordering otherwise
             var sequenceSwapped = ((sequence << 8) | ((sequence >> 8) & 0x00FF)) & 0xFFFF;
 
-//#if NET6_0_OR_GREATER
-//            if (Ssse3.IsSupported && BitConverter.IsLittleEndian)
-//            {
-//                var vec = Vector128.Create((int)a, (b << 16) | c, _c, _d | sequenceSwapped);
-//                var result = Ssse3.Shuffle(vec.AsByte(), Vector128.Create((byte)0, 1, 2, 3, 6, 7, 4, 5, 11, 10, 9, 8, 15, 14, 13, 12));
-//                return Unsafe.As<Vector128<byte>, Guid>(ref result);
-//            }
-//#endif
+#if NET6_0_OR_GREATER
+            if (Ssse3.IsSupported && BitConverter.IsLittleEndian)
+            {
+                var vec = Vector128.Create((int)a, (b << 16) | c, _c, _d | sequenceSwapped);
+                var result = Ssse3.Shuffle(vec.AsByte(), Vector128.Create((byte)0, 1, 2, 3, 6, 7, 4, 5, 11, 10, 9, 8, 15, 14, 13, 12));
+                return Unsafe.As<Vector128<byte>, Guid>(ref result);
+            }
+#endif
 
             var d = (byte)(_gc >> 8);
             var e = (byte)_gc;

@@ -36,53 +36,53 @@
         public static readonly string GuidString = Guid.ToString();
         public static readonly byte[] GuidBytes = Guid.ToByteArray();
 
-        [Benchmark]
-        public Guid ToGuid()
-        {
-            return Max.ToGuid();
-        }
+        //[Benchmark]
+        //public Guid ToGuid()
+        //{
+        //    return Max.ToGuid();
+        //}
 
-        [Benchmark]
-        public NewId FromGuid()
-        {
-            return NewId.FromGuid(Guid);
-        }
+        //[Benchmark]
+        //public NewId FromGuid()
+        //{
+        //    return NewId.FromGuid(Guid);
+        //}
 
-        [Benchmark]
-        public Guid ToSequentialGuid()
-        {
-            return Max.ToSequentialGuid();
-        }
+        //[Benchmark]
+        //public Guid ToSequentialGuid()
+        //{
+        //    return Max.ToSequentialGuid();
+        //}
 
-        [Benchmark]
-        public NewId FromSequentialGuid()
-        {
-            return NewId.FromSequentialGuid(Guid);
-        }
+        //[Benchmark]
+        //public NewId FromSequentialGuid()
+        //{
+        //    return NewId.FromSequentialGuid(Guid);
+        //}
 
-        [Benchmark]
-        public byte[] ToByteArray()
-        {
-            return Max.ToByteArray();
-        }
+        //[Benchmark]
+        //public byte[] ToByteArray()
+        //{
+        //    return Max.ToByteArray();
+        //}
 
-        [Benchmark]
-        public string ToString()
-        {
-            return Max.ToString();
-        }
+        //[Benchmark]
+        //public string ToString()
+        //{
+        //    return Max.ToString();
+        //}
 
-        [Benchmark]
-        public NewId FromString()
-        {
-            return new NewId(GuidString);
-        }
+        //[Benchmark]
+        //public NewId FromString()
+        //{
+        //    return new NewId(GuidString);
+        //}
 
-        [Benchmark]
-        public NewId FromBytes()
-        {
-            return new NewId(GuidBytes);
-        }
+        //[Benchmark]
+        //public NewId FromBytes()
+        //{
+        //    return new NewId(GuidBytes);
+        //}
 
         //[Benchmark]
         //public byte[] GetFormatterArray()
@@ -90,38 +90,38 @@
         //    return Max.GetSequentialFormatterArray();
         //}
 
-        //[Benchmark]
-        //public Guid NextGuid()
-        //{
-        //    return NewId.NextGuid();
-        //}
+        [Benchmark]
+        public Guid NextGuid()
+        {
+            return NewId.NextGuid();
+        }
 
-        //[Benchmark]
-        //public Guid NextGuidBulk()
-        //{
-        //    Guid g;
-        //    for (int i = 0; i < 100_000; i++)
-        //    {
-        //        g = NewId.NextGuid();
-        //    }
-        //    return NewId.NextGuid();
-        //}
+        [Benchmark]
+        public Guid NextGuidBulk()
+        {
+            Guid g;
+            for (int i = 0; i < 100_000; i++)
+            {
+                g = NewId.NextGuid();
+            }
+            return NewId.NextGuid();
+        }
 
-        //[Benchmark]
-        //public Guid NextSequentialGuid()
-        //{
-        //    return NewId.NextSequentialGuid();
-        //}
+        [Benchmark]
+        public Guid NextSequentialGuid()
+        {
+            return NewId.NextSequentialGuid();
+        }
 
-        //[Benchmark]
-        //public Guid NextSequentialGuidBulk()
-        //{
-        //    Guid g;
-        //    for (int i = 0; i < 100_000; i++)
-        //    {
-        //        g = NewId.NextSequentialGuid();
-        //    }
-        //    return NewId.NextSequentialGuid();
-        //}
+        [Benchmark]
+        public Guid NextSequentialGuidBulk()
+        {
+            Guid g;
+            for (int i = 0; i < 100_000; i++)
+            {
+                g = NewId.NextSequentialGuid();
+            }
+            return NewId.NextSequentialGuid();
+        }
     }
 }
