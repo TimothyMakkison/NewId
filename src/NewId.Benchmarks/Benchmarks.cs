@@ -2,6 +2,7 @@
 {
     using System;
     using BenchmarkDotNet.Attributes;
+    using BenchmarkDotNet.Columns;
     using BenchmarkDotNet.Configs;
     using BenchmarkDotNet.Environments;
     using BenchmarkDotNet.Jobs;
@@ -12,7 +13,10 @@
         {
             // Run with intrinsics disabled
             AddJob(
-                Job.Default.WithEnvironmentVariable(new EnvironmentVariable("COMPlus_EnableSSE2", "0")).WithRuntime(CoreRuntime.Core60).AsDefault());
+                Job.Default
+                .WithEnvironmentVariable(new EnvironmentVariable("COMPlus_EnableSSE2", "0"))
+                .WithRuntime(CoreRuntime.Core60)
+                .AsBaseline());
 
             // Run with intrinsics
             AddJob(
@@ -23,29 +27,19 @@
 
     [Config(typeof(Config))]
     [MemoryDiagnoser(false)]
+    [HideColumns(Column.Job, Column.RatioSD, Column.AllocRatio)]
     public class Benchmarks
     {
-        public NewId Min = NewId.Empty;
-        public Guid Guid = Guid.NewGuid();
-        public NewId Max = NewId.Next();
-
+        public static readonly NewId Min = NewId.Empty;
+        public static readonly NewId Max = NewId.Next();
+        public static readonly Guid Guid = Guid.NewGuid();
+        public static readonly string GuidString = Guid.ToString();
+        public static readonly byte[] GuidBytes = Guid.ToByteArray();
 
         [Benchmark]
         public Guid ToGuid()
         {
             return Max.ToGuid();
-        }
-
-        [Benchmark]
-        public Guid ToSequentialGuid()
-        {
-            return Max.ToSequentialGuid();
-        }
-
-        [Benchmark]
-        public byte[] ToByteArray()
-        {
-            return Max.ToByteArray();
         }
 
         [Benchmark]
@@ -55,15 +49,39 @@
         }
 
         [Benchmark]
+        public Guid ToSequentialGuid()
+        {
+            return Max.ToSequentialGuid();
+        }
+
+        [Benchmark]
         public NewId FromSequentialGuid()
         {
             return NewId.FromSequentialGuid(Guid);
         }
 
         [Benchmark]
+        public byte[] ToByteArray()
+        {
+            return Max.ToByteArray();
+        }
+
+        [Benchmark]
         public string ToString()
         {
             return Max.ToString();
+        }
+
+        [Benchmark]
+        public NewId FromString()
+        {
+            return new NewId(GuidString);
+        }
+
+        [Benchmark]
+        public NewId FromBytes()
+        {
+            return new NewId(GuidBytes);
         }
 
         //[Benchmark]
