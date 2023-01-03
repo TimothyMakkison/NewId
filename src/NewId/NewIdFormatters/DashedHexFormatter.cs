@@ -53,9 +53,9 @@ namespace MassTransit.NewIdFormatters
                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 
-                    var a = IntrinsicsHelper.EncodeBytesHex(Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetArrayDataReference<byte>(state)), _alpha == 'A');
+                    var hexVec = IntrinsicsHelper.EncodeBytesHex(Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetArrayDataReference<byte>(state)), _alpha == 'A');
 
-                    var a1 = Avx2.Shuffle(a, swizzle);
+                    var a1 = Avx2.Shuffle(hexVec, swizzle);
                     var a2 = Avx2.Or(a1, dash);
 
                     //var padMask = Vector256.Create((byte)0, 0xFF, 1, 0xFF, 2, 0xFF, 3, 0xFF, 4, 0xFF, 5, 0xFF, 6, 0xFF, 7, 0xFF, 8, 0xFF, 9, 0xFF, 10, 0xFF, 11, 0xFF, 12, 0xFF, 13, 0xFF, 14, 0xFF, 15, 0xFF);
@@ -81,6 +81,14 @@ namespace MassTransit.NewIdFormatters
                     charSpan[33] = HexToChar(state[14], _alpha);
                     charSpan[34] = HexToChar(state[15] >> 4, _alpha);
                     charSpan[35] = HexToChar(state[15], _alpha);
+
+                    //spanBytes[32] = hexVec.GetElement(14);
+                    //spanBytes[34] = hexVec.GetElement(15);
+
+                    //spanBytes[64] = hexVec.GetElement(29);
+                    //spanBytes[66] = hexVec.GetElement(30);
+                    //spanBytes[68] = hexVec.GetElement(31);
+                    //spanBytes[70] = hexVec.GetElement(32);
 
                     if (span.Length == 38)
                     {
@@ -156,7 +164,71 @@ namespace MassTransit.NewIdFormatters
                 result[offset++] = HexToChar(bytes[15], _alpha);
             });
 #endif
-            throw new NotImplementedException();
+            var result = new char[_length];
+
+            var i = 0;
+            var offset = 0;
+            if (_prefix != '\0')
+                result[offset++] = _prefix;
+
+            if (result.Length == 38)
+            {
+                result[36] = HexToChar(bytes[15], _alpha);
+            }
+            else
+            {
+                result[35] = HexToChar(bytes[15], _alpha);
+            }
+
+            result[offset++] = HexToChar(bytes[0] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[0], _alpha);
+            result[offset++] = HexToChar(bytes[1] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[1], _alpha);
+            result[offset++] = HexToChar(bytes[2] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[2], _alpha);
+            result[offset++] = HexToChar(bytes[3] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[3], _alpha);
+
+            result[offset++] = '-';
+
+            result[offset++] = HexToChar(bytes[4] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[4], _alpha);
+            result[offset++] = HexToChar(bytes[5] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[5], _alpha);
+
+            result[offset++] = '-';
+
+            result[offset++] = HexToChar(bytes[6] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[6], _alpha);
+            result[offset++] = HexToChar(bytes[7] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[7], _alpha);
+
+            result[offset++] = '-';
+
+            result[offset++] = HexToChar(bytes[8] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[8], _alpha);
+            result[offset++] = HexToChar(bytes[9] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[9], _alpha);
+
+            result[offset++] = '-';
+
+            result[offset++] = HexToChar(bytes[10] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[10], _alpha);
+            result[offset++] = HexToChar(bytes[11] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[11], _alpha);
+            result[offset++] = HexToChar(bytes[12] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[12], _alpha);
+            result[offset++] = HexToChar(bytes[13] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[13], _alpha);
+            result[offset++] = HexToChar(bytes[14] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[14], _alpha);
+            result[offset++] = HexToChar(bytes[15] >> 4, _alpha);
+            result[offset++] = HexToChar(bytes[15], _alpha);
+
+            if (_suffix != '\0')
+                result[offset] = _suffix;
+
+            return new string(result, 0, _length);
         }
 
 

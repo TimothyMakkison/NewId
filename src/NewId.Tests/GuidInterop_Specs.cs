@@ -176,6 +176,22 @@
         }
 
         [Test]
+        public void Should_parse_sequential_guid_2_as_newid()
+        {
+            NewId n = NewId.Next(2)[1];
+
+            var nn = n.ToGuid();
+            var g = n.ToSequentialGuid();
+
+            var ng = NewId.FromSequentialGuid(g);
+
+            Assert.AreEqual(n, ng);
+
+            // Also checks to see if this would throw
+            Assert.IsTrue(ng.Timestamp != default);
+        }
+
+        [Test]
         public void Should_parse_sequential_guid_as_newid()
         {
             NewId n = NewId.Next();
