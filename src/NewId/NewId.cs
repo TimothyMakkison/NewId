@@ -11,6 +11,7 @@ namespace MassTransit
     using System.Runtime.Intrinsics;
     using System.Runtime.InteropServices;
     using System.Diagnostics;
+    using System.Buffers.Binary;
 #endif
     /// <summary>
     /// A NewId is a type that fits into the same space as a Guid/Uuid/unique identifier,
@@ -51,15 +52,6 @@ namespace MassTransit
             if (bytes.Length != 16)
                 throw new ArgumentException("Exactly 16 bytes expected", nameof(bytes));
 
-#if NET6_0_OR_GREATER
-            if (Sse3.IsSupported)
-            {
-                FromByteSpan(bytes, out NewId newId);
-                this = newId;
-                return;
-            }
-#endif
-
             FromByteArray(bytes, out _a, out _b, out _c, out _d);
         }
 
@@ -69,18 +61,6 @@ namespace MassTransit
                 throw new ArgumentException("must not be null or empty", nameof(value));
 
             var guid = new Guid(value);
-#if NET6_0_OR_GREATER
-            if (Sse3.IsSupported)
-            {
-                Span<Guid> span = stackalloc Guid[1];
-                span[0] = guid;
-                var byteSpan = MemoryMarshal.Cast<Guid, byte>(span);
-
-                FromByteSpan(byteSpan, out NewId newId);
-                this = newId;
-                return;
-            }
-#endif
 
             var bytes = guid.ToByteArray();
 
@@ -539,6 +519,7 @@ namespace MassTransit
         static void FromByteSpan(ReadOnlySpan<byte> span, out NewId newId)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<Guid>());
+            Debug.Assert(Ssse3.IsSupported && BitConverter.IsLittleEndian);
 
             var vector = MemoryMarshal.Read<Vector128<byte>>(span);
             var shuffle = Vector128.Create((byte)13, 12, 11, 10, 9, 8, 15, 14, 4, 5, 6, 7, 1, 0, 2, 3);
@@ -553,16 +534,17 @@ namespace MassTransit
             a = bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0];
             b = bytes[5] << 24 | bytes[4] << 16 | bytes[7] << 8 | bytes[6];
             c = bytes[8] << 24 | bytes[9] << 16 | bytes[10] << 8 | bytes[11];
-            d = bytes[12] << 24 | bytes[13] << 16 | bytes[15] << 8 | bytes[14];
+            d = bytes[12] << 24 | bytes[13] << 16 | bytes[14] << 8 | bytes[15];
         }
 
 #if NET6_0_OR_GREATER
         static void FromSequentialByteSpan(ReadOnlySpan<byte> span, out NewId newId)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<Guid>());
+            Debug.Assert(Ssse3.IsSupported && BitConverter.IsLittleEndian);
 
             var vector = MemoryMarshal.Read<Vector128<byte>>(span);
-            var shuffle = Vector128.Create((byte)0, 1, 2, 3, 6, 7, 4, 5, 11, 10, 9, 8, 14, 15, 13, 12);
+            var shuffle = Vector128.Create((byte)0, 1, 2, 3, 6, 7, 4, 5, 11, 10, 9, 8, 15, 14, 13, 12);
             var result = Ssse3.Shuffle(vector, shuffle);
             newId = Unsafe.As<Vector128<byte>, NewId>(ref result);
         }
