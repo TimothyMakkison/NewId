@@ -128,6 +128,9 @@
             var sequence = _sequence++;
 
             var a = _a;
+#if NET6_0_OR_GREATER
+            var v = _b;
+#endif
             var b = (short)(_b >> 16);
             var c = (short)_b;
 
@@ -140,7 +143,7 @@
 #if NET6_0_OR_GREATER
             if (Ssse3.IsSupported && BitConverter.IsLittleEndian)
             {
-                var vec = Vector128.Create((int)a, b, _c, _d | sequenceSwapped);
+                var vec = Vector128.Create((int)a, v, _c, _d | sequenceSwapped);
                 var result = Ssse3.Shuffle(vec.AsByte(), Vector128.Create((byte)0, 1, 2, 3, 6, 7, 4, 5, 11, 10, 9, 8, 15, 14, 13, 12));
                 return Unsafe.As<Vector128<byte>, Guid>(ref result);
             }
