@@ -39,13 +39,16 @@
             _chars = chars;
 
 #if NET6_0_OR_GREATER
-            _isCustom = true;
-            var bytes = MemoryMarshal.Cast<char, byte>(chars);
-            var lower = MemoryMarshal.Read<Vector256<byte>>(bytes);
-            var upper = MemoryMarshal.Read<Vector256<byte>>(bytes[32..]);
+            if (Avx2.IsSupported && BitConverter.IsLittleEndian)
+            {
+                _isCustom = true;
+                var bytes = MemoryMarshal.Cast<char, byte>(chars);
+                var lower = MemoryMarshal.Read<Vector256<byte>>(bytes);
+                var upper = MemoryMarshal.Read<Vector256<byte>>(bytes[32..]);
 
-            _lower = IntrinsicsHelper.GetByteLutFromChar(lower);
-            _upper = IntrinsicsHelper.GetByteLutFromChar(upper);
+                _lower = IntrinsicsHelper.GetByteLutFromChar(lower);
+                _upper = IntrinsicsHelper.GetByteLutFromChar(upper);
+            }
 #endif
         }
 
@@ -158,8 +161,8 @@
                 0x05, 0x06,
                 0x07, 0x06, 0x08, 0x07, 0x09, 0x08);
  
-            var splitM1 = Vector256.Create((ulong)0x0800_0200_0080_0020, 0x0800_0200_0080_0020, 0x0800_0200_0080_0020, 0x0020_0080_0200_0800).AsUInt16();
-            var splitM2 = Vector256.Create((ulong)0x0100_0040_0010_0004, 0x0100_0040_0010_0004, 0x0100_0040_0010_0004, 0x0004_0010_0040_0100).AsInt16();
+            var splitM1 = Vector256.Create((ulong)0x0800_0200_0080_0020, 0x0800_0200_0080_0020, 0x0800_0200_0080_0020, 0x0800).AsUInt16();
+            var splitM2 = Vector256.Create((ulong)0x0100_0040_0010_0004, 0x0100_0040_0010_0004, 0x0100_0040_0010_0004, 0x0100).AsInt16();
 
             var maskM1 = Vector256.Create((ushort)0x00_1F);
             var maskM2 = Vector256.Create((ushort)0x1F_00);

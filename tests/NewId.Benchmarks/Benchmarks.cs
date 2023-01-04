@@ -2,31 +2,43 @@
 {
     using System;
     using BenchmarkDotNet.Attributes;
+    using BenchmarkDotNet.Columns;
     using BenchmarkDotNet.Configs;
     using BenchmarkDotNet.Environments;
     using BenchmarkDotNet.Jobs;
+    using MassTransit.NewIdProviders;
 
     public class Config : ManualConfig
     {
         public Config()
         {
+            // Run with intrinsics disabled
             AddJob(
-                Job.Default.WithEnvironmentVariable(new EnvironmentVariable("COMPlus_EnableSSE2", "0")).WithRuntime(CoreRuntime.Core60));
+                Job.Default
+                .WithEnvironmentVariable(new EnvironmentVariable("COMPlus_EnableSSE2", "0"))
+                .WithRuntime(CoreRuntime.Core60)
+                .AsBaseline());
 
+            // Run with intrinsics
             AddJob(
                Job.Default.WithRuntime(CoreRuntime.Core60));
-
         }
     }
 
     [Config(typeof(Config))]
     [MemoryDiagnoser(false)]
+    [HideColumns(Column.Job, Column.RatioSD, Column.AllocRatio)]
     public class Benchmarks
     {
         public NewId Min = NewId.Empty;
         public Guid Guid = Guid.NewGuid();
         public NewId Max = NewId.Next();
 
+        [Benchmark]
+        public NewIdGenerator CreateIdGenerator()
+        {
+            return new NewIdGenerator(new DateTimeTickProvider(), new BestPossibleWorkerIdProvider());
+        }
 
         //[Benchmark]
         //public Guid ToGuid()
@@ -64,11 +76,31 @@
         //    return Max.ToString();
         //}
 
-        [Benchmark]
-        public string ToStringHex()
-        {
-            return Max.ToString("D");
-        }
+        //[Benchmark]
+        //public string ToStringHex()
+        //{
+        //    return Max.ToString("N");
+        //}
+
+        //private readonly ZBase32Formatter _zBase32 = new ZBase32Formatter();
+        //[Benchmark]
+        //public string ToStringZBase()
+        //{
+        //    return Max.ToString(_zBase32);
+        //}
+
+        //private readonly Base32Formatter _base32 = new Base32Formatter();
+        //[Benchmark]
+        //public string ToStringBase32()
+        //{
+        //    return Max.ToString(_base32);
+        //}
+
+        //[Benchmark]
+        //public ZBase32Formatter CreateZBase32()
+        //{
+        //    return new ZBase32Formatter();
+        //}
 
         //[Benchmark]
         //public string ToStringBrackets()

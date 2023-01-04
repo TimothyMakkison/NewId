@@ -56,13 +56,11 @@ namespace MassTransit.NewIdFormatters
                     var a1 = Avx2.Shuffle(hexVec, swizzle);
                     var a2 = Avx2.Or(a1, dash);
 
-                    //var padMask = Vector256.Create((byte)0, 0xFF, 1, 0xFF, 2, 0xFF, 3, 0xFF, 4, 0xFF, 5, 0xFF, 6, 0xFF, 7, 0xFF, 8, 0xFF, 9, 0xFF, 10, 0xFF, 11, 0xFF, 12, 0xFF, 13, 0xFF, 14, 0xFF, 15, 0xFF);
-
-                    //var lower = Avx2.Permute2x128(a2, a2, 0b10_00_00);
-                    //var upper = Avx2.Permute2x128(a2, a2, 0b11_00_01);
-
-                    //var lowerPadded = Avx2.Shuffle(lower, padMask);
-                    //var upperPadded = Avx2.Shuffle(upper, padMask);
+                    if (span.Length == 38)
+                    {
+                        span[0] = _prefix;
+                        span[^1] = _suffix;
+                    }
 
                     var lowerPadded = IntrinsicsHelper.ToCharUtf16(a2.GetLower());
                     var upperPadded = IntrinsicsHelper.ToCharUtf16(a2.GetUpper());
@@ -72,27 +70,13 @@ namespace MassTransit.NewIdFormatters
                     MemoryMarshal.TryWrite(spanBytes, ref lowerPadded);
                     MemoryMarshal.TryWrite(spanBytes[32..], ref upperPadded);
 
-                    charSpan[16] = HexToChar(state[7] >> 4, _alpha);
-                    charSpan[17] = HexToChar(state[7], _alpha);
+                    spanBytes[32] = hexVec.GetElement(14);
+                    spanBytes[34] = hexVec.GetElement(15);
 
-                    charSpan[32] = HexToChar(state[14] >> 4, _alpha);
-                    charSpan[33] = HexToChar(state[14], _alpha);
-                    charSpan[34] = HexToChar(state[15] >> 4, _alpha);
-                    charSpan[35] = HexToChar(state[15], _alpha);
-
-                    //spanBytes[32] = hexVec.GetElement(14);
-                    //spanBytes[34] = hexVec.GetElement(15);
-
-                    //spanBytes[64] = hexVec.GetElement(29);
-                    //spanBytes[66] = hexVec.GetElement(30);
-                    //spanBytes[68] = hexVec.GetElement(31);
-                    //spanBytes[70] = hexVec.GetElement(32);
-
-                    if (span.Length == 38)
-                    {
-                        span[0] = _prefix;
-                        span[^1] = _suffix;
-                    }
+                    spanBytes[64] = hexVec.GetElement(28);
+                    spanBytes[66] = hexVec.GetElement(29);
+                    spanBytes[68] = hexVec.GetElement(30);
+                    spanBytes[70] = hexVec.GetElement(31);
                 });
             }
 
