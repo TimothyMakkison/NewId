@@ -7,7 +7,7 @@ namespace MassTransit.Benchmarks
     {
         public static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<Benchmarker>();
+            var summary = BenchmarkRunner.Run<NewIdBenchmarks>();
         }
     }
 }

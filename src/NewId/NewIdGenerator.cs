@@ -6,6 +6,8 @@
     using System.Runtime.CompilerServices;
     using System.Runtime.Intrinsics;
     using System.Runtime.Intrinsics.X86;
+    using System.Buffers.Binary;
+    using System.Runtime.InteropServices;
 #endif
 
 
@@ -99,6 +101,18 @@
                 var result = Ssse3.Shuffle(vec.AsByte(), Vector128.Create((byte)12, 13, 14, 15, 8, 9, 10, 11, 5, 4, 3, 2, 1, 0, 7, 6));
                 return Unsafe.As<Vector128<byte>, Guid>(ref result);
             }
+
+            //if (BitConverter.IsLittleEndian && Ssse3.IsSupported)
+            //{
+            //    Span<byte> span = stackalloc byte[16];
+            //    BinaryPrimitives.WriteInt32LittleEndian(span, _d | sequenceSwapped);
+            //    BinaryPrimitives.WriteInt32LittleEndian(span[4..], _c);
+            //    BinaryPrimitives.WriteInt16BigEndian(span[8..], (short)b);
+            //    BinaryPrimitives.WriteInt32BigEndian(span[10..], a);
+            //    BinaryPrimitives.WriteInt16BigEndian(span[14..], (short)(b >> 16));
+
+            //    return MemoryMarshal.Read<Guid>(span);
+            //}
 #endif
 
             var d = (byte)(b >> 8);
@@ -147,6 +161,18 @@
                 var result = Ssse3.Shuffle(vec.AsByte(), Vector128.Create((byte)0, 1, 2, 3, 6, 7, 4, 5, 11, 10, 9, 8, 15, 14, 13, 12));
                 return Unsafe.As<Vector128<byte>, Guid>(ref result);
             }
+
+            //if (BitConverter.IsLittleEndian && Ssse3.IsSupported)
+            //{
+            //    Span<byte> span = stackalloc byte[16];
+            //    BinaryPrimitives.WriteInt32LittleEndian(span, a);
+            //    BinaryPrimitives.WriteInt16LittleEndian(span[4..], b);
+            //    BinaryPrimitives.WriteInt16LittleEndian(span[6..], c);
+            //    BinaryPrimitives.WriteInt16LittleEndian(span[6..], c);
+            //    BinaryPrimitives.WriteInt32BigEndian(span[8..], _c);
+            //    BinaryPrimitives.WriteInt32BigEndian(span[12..], _d | sequenceSwapped);
+            //    return MemoryMarshal.Read<Guid>(span);
+            //}
 #endif
 
             var d = (byte)(_gc >> 8);
