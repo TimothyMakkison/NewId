@@ -35,9 +35,9 @@ namespace MassTransit.NewIdFormatters
 #if NET6_0_OR_GREATER
             if (Avx2.IsSupported && BitConverter.IsLittleEndian)
             {
-                return string.Create(_length, (bytes, _alpha, _prefix, _suffix), (span, st) =>
+                return string.Create(_length, (bytes, _alpha == 'A', _prefix, _suffix), (span, state) =>
                 {
-                    var (state, _alpha, _prefix, _suffix) = st;
+                    var (bytes, isUpper, prefix, suffix) = state;
                     var swizzle = Vector256.Create((byte)
                         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
                         0x80, 0x08, 0x09, 0x0a, 0x0b, 0x80, 0x0c, 0x0d,
@@ -50,16 +50,16 @@ namespace MassTransit.NewIdFormatters
                         0x00, 0x00, 0x2d, 0x00, 0x00, 0x00, 0x00, 0x2d,
                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
-
-                    var hexVec = IntrinsicsHelper.EncodeBytesHex(Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetArrayDataReference<byte>(state)), _alpha == 'A');
+                    var inputVec = MemoryMarshal.Read<Vector128<byte>>(bytes);
+                    var hexVec = IntrinsicsHelper.EncodeBytesHex(inputVec, isUpper);
 
                     var a1 = Avx2.Shuffle(hexVec, swizzle);
                     var a2 = Avx2.Or(a1, dash);
 
                     if (span.Length == 38)
                     {
-                        span[0] = _prefix;
-                        span[^1] = _suffix;
+                        span[0] = prefix;
+                        span[^1] = suffix;
                     }
 
                     var lowerPadded = IntrinsicsHelper.ToCharUtf16(a2.GetLower());

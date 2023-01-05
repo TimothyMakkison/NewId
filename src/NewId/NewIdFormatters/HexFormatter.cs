@@ -30,12 +30,8 @@ namespace MassTransit.NewIdFormatters
                     var inputVec = MemoryMarshal.Read<Vector128<byte>>(bytes);
                     var hexVec = IntrinsicsHelper.EncodeBytesHex(inputVec, isUpper);
 
-                    var lowerPadded = IntrinsicsHelper.ToCharUtf16(hexVec.GetLower());
-                    var upperPadded = IntrinsicsHelper.ToCharUtf16(hexVec.GetUpper());
-
-                    var spanBytes = MemoryMarshal.Cast<char, byte>(span);
-                    MemoryMarshal.Write(spanBytes, ref lowerPadded);
-                    MemoryMarshal.Write(spanBytes[32..], ref upperPadded);
+                    var byteSpan = MemoryMarshal.Cast<char, byte>(span);
+                    IntrinsicsHelper.Vec256ToCharUtf16(hexVec, byteSpan);
                 });
             }
 #endif
