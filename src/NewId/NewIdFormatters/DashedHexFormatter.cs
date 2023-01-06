@@ -11,7 +11,7 @@ namespace MassTransit.NewIdFormatters
     public class DashedHexFormatter :
         INewIdFormatter
     {
-        readonly int _alpha;
+        readonly uint _alpha;
         readonly int _length;
         readonly char _prefix;
         readonly char _suffix;
@@ -27,185 +27,70 @@ namespace MassTransit.NewIdFormatters
                 _length = 38;
             }
 
-            _alpha = upperCase ? 'A' : 'a';
+            _alpha = upperCase ? 0 : 0x2020U;
         }
 
         public string Format(in byte[] bytes)
         {
-#if NET6_0_OR_GREATER
-            if (Avx2.IsSupported && BitConverter.IsLittleEndian)
-            {
-                return string.Create(_length, (bytes, _alpha == 'A', _prefix, _suffix), (span, state) =>
-                {
-                    var (bytes, isUpper, prefix, suffix) = state;
-                    var swizzle = Vector256.Create((byte)
-                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                        0x80, 0x08, 0x09, 0x0a, 0x0b, 0x80, 0x0c, 0x0d,
-                        0x80, 0x80, 0x80, 0x00, 0x01, 0x02, 0x03, 0x80,
-                        0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b);
+//#if NET6_0_OR_GREATER
+//            if (Avx2.IsSupported && BitConverter.IsLittleEndian)
+//            {
+//                return string.Create(_length, (bytes, _alpha == 'A', _prefix, _suffix), (span, state) =>
+//                {
+//                    EncodeDashedHex(span, state);
+//                });
+//            }
+//#endif
+            return EncodeScalar(bytes);
+         
+        }
 
-                    var dash = Vector256.Create((byte)
-                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                        0x2d, 0x00, 0x00, 0x00, 0x00, 0x2d, 0x00, 0x00,
-                        0x00, 0x00, 0x2d, 0x00, 0x00, 0x00, 0x00, 0x2d,
-                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
-
-                    var inputVec = MemoryMarshal.Read<Vector128<byte>>(bytes);
-                    var hexVec = IntrinsicsHelper.EncodeBytesHex(inputVec, isUpper);
-
-                    var a1 = Avx2.Shuffle(hexVec, swizzle);
-                    var a2 = Avx2.Or(a1, dash);
-
-                    if (span.Length == 38)
-                    {
-                        span[0] = prefix;
-                        span[^1] = suffix;
-                    }
-
-                    var lowerPadded = IntrinsicsHelper.ToCharUtf16(a2.GetLower());
-                    var upperPadded = IntrinsicsHelper.ToCharUtf16(a2.GetUpper());
-
-                    var charSpan = span.Length == 38 ? span[1..^1] : span;
-                    var spanBytes = MemoryMarshal.Cast<char, byte>(charSpan);
-                    MemoryMarshal.TryWrite(spanBytes, ref lowerPadded);
-                    MemoryMarshal.TryWrite(spanBytes[32..], ref upperPadded);
-
-                    spanBytes[32] = hexVec.GetElement(14);
-                    spanBytes[34] = hexVec.GetElement(15);
-
-                    spanBytes[64] = hexVec.GetElement(28);
-                    spanBytes[66] = hexVec.GetElement(29);
-                    spanBytes[68] = hexVec.GetElement(30);
-                    spanBytes[70] = hexVec.GetElement(31);
-                });
-            }
-
-            return string.Create(_length, (bytes, _alpha, _prefix, _suffix), (span, st) =>
-            {
-                var (bytes, _alpha, _prefix, _suffix) = st;
-
-                var result = new char[_length];
-
-                var i = 0;
-                var offset = 0;
-                if (_prefix != '\0')
-                    result[offset++] = _prefix;
-
-                if(result.Length == 38)
-                {
-                    result[36] = HexToChar(bytes[15], _alpha);
-                }
-                else
-                {
-                    result[35] = HexToChar(bytes[15], _alpha);
-                }
-
-                result[offset++] = HexToChar(bytes[0] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[0], _alpha);
-                result[offset++] = HexToChar(bytes[1] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[1], _alpha);
-                result[offset++] = HexToChar(bytes[2] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[2], _alpha);
-                result[offset++] = HexToChar(bytes[3] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[3], _alpha);
-
-                result[offset++] = '-';
-
-                result[offset++] = HexToChar(bytes[4] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[4], _alpha);
-                result[offset++] = HexToChar(bytes[5] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[5], _alpha);
-
-                result[offset++] = '-';
-
-                result[offset++] = HexToChar(bytes[6] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[6], _alpha);
-                result[offset++] = HexToChar(bytes[7] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[7], _alpha);
-
-                result[offset++] = '-';
-
-                result[offset++] = HexToChar(bytes[8] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[8], _alpha);
-                result[offset++] = HexToChar(bytes[9] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[9], _alpha);
-
-                result[offset++] = '-';
-
-                result[offset++] = HexToChar(bytes[10] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[10], _alpha);
-                result[offset++] = HexToChar(bytes[11] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[11], _alpha);
-                result[offset++] = HexToChar(bytes[12] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[12], _alpha);
-                result[offset++] = HexToChar(bytes[13] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[13], _alpha);
-                result[offset++] = HexToChar(bytes[14] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[14], _alpha);
-                result[offset++] = HexToChar(bytes[15] >> 4, _alpha);
-                result[offset++] = HexToChar(bytes[15], _alpha);
-            });
-#endif
+        public string EncodeScalar(in byte[] bytes)
+        {
             var result = new char[_length];
 
             var i = 0;
             var offset = 0;
             if (_prefix != '\0')
                 result[offset++] = _prefix;
-
-            if (result.Length == 38)
+            for (; i < 4; i++)
             {
-                result[36] = HexToChar(bytes[15], _alpha);
-            }
-            else
-            {
-                result[35] = HexToChar(bytes[15], _alpha);
+                var value = bytes[i];
+                HexToChar(value, result, offset, _alpha);
+                offset+=2;
             }
 
-            result[offset++] = HexToChar(bytes[0] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[0], _alpha);
-            result[offset++] = HexToChar(bytes[1] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[1], _alpha);
-            result[offset++] = HexToChar(bytes[2] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[2], _alpha);
-            result[offset++] = HexToChar(bytes[3] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[3], _alpha);
+            result[offset++] = '-';
+            for (; i < 6; i++)
+            {
+                var value = bytes[i];
+                HexToChar(value, result, offset, _alpha);
+                offset+=2;
+            }
 
             result[offset++] = '-';
-
-            result[offset++] = HexToChar(bytes[4] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[4], _alpha);
-            result[offset++] = HexToChar(bytes[5] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[5], _alpha);
-
-            result[offset++] = '-';
-
-            result[offset++] = HexToChar(bytes[6] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[6], _alpha);
-            result[offset++] = HexToChar(bytes[7] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[7], _alpha);
+            for (; i < 8; i++)
+            {
+                var value = bytes[i];
+                HexToChar(value, result, offset, _alpha);
+                offset+=2;
+            }
 
             result[offset++] = '-';
-
-            result[offset++] = HexToChar(bytes[8] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[8], _alpha);
-            result[offset++] = HexToChar(bytes[9] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[9], _alpha);
+            for (; i < 10; i++)
+            {
+                var value = bytes[i];
+                HexToChar(value, result, offset, _alpha);
+                offset+=2;
+            }
 
             result[offset++] = '-';
-
-            result[offset++] = HexToChar(bytes[10] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[10], _alpha);
-            result[offset++] = HexToChar(bytes[11] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[11], _alpha);
-            result[offset++] = HexToChar(bytes[12] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[12], _alpha);
-            result[offset++] = HexToChar(bytes[13] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[13], _alpha);
-            result[offset++] = HexToChar(bytes[14] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[14], _alpha);
-            result[offset++] = HexToChar(bytes[15] >> 4, _alpha);
-            result[offset++] = HexToChar(bytes[15], _alpha);
+            for (; i < 16; i++)
+            {
+                var value = bytes[i];
+                HexToChar(value, result, offset, _alpha);
+                offset+=2;
+            }
 
             if (_suffix != '\0')
                 result[offset] = _suffix;
@@ -213,11 +98,57 @@ namespace MassTransit.NewIdFormatters
             return new string(result, 0, _length);
         }
 
-
-        static char HexToChar(int value, int alpha)
+#if NET6_0_OR_GREATER
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void EncodeVector256(Span<char> span, (byte[] bytes, bool, char _prefix, char _suffix) state)
         {
-            value &= 0xf;
-            return (char)(value > 9 ? value - 10 + alpha : value + 0x30);
+            var (bytes, isUpper, prefix, suffix) = state;
+            var swizzle = Vector256.Create((byte)
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                0x80, 0x08, 0x09, 0x0a, 0x0b, 0x80, 0x0c, 0x0d,
+                0x80, 0x80, 0x80, 0x00, 0x01, 0x02, 0x03, 0x80,
+                0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b);
+
+            var dash = Vector256.Create((byte)
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x2d, 0x00, 0x00, 0x00, 0x00, 0x2d, 0x00, 0x00,
+                0x00, 0x00, 0x2d, 0x00, 0x00, 0x00, 0x00, 0x2d,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+
+            var inputVec = MemoryMarshal.Read<Vector128<byte>>(bytes);
+            var hexVec = IntrinsicsHelper.EncodeBytesHex(inputVec, isUpper);
+
+            var a1 = Avx2.Shuffle(hexVec, swizzle);
+            var a2 = Avx2.Or(a1, dash);
+
+            if (span.Length == 38)
+            {
+                span[0] = prefix;
+                span[^1] = suffix;
+            }
+
+            var charSpan = span.Length == 38 ? span[1..^1] : span;
+            var spanBytes = MemoryMarshal.Cast<char, byte>(charSpan);
+            IntrinsicsHelper.Vector256ToCharUtf16(a2, spanBytes);
+
+            spanBytes[32] = hexVec.GetElement(14);
+            spanBytes[34] = hexVec.GetElement(15);
+
+            spanBytes[64] = hexVec.GetElement(28);
+            spanBytes[66] = hexVec.GetElement(29);
+            spanBytes[68] = hexVec.GetElement(30);
+            spanBytes[70] = hexVec.GetElement(31);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        static void HexToChar(byte value, char[] buffer, int startingIndex, uint casing)
+        {
+            uint difference = (((uint)value & 0xF0U) << 4) + ((uint)value & 0x0FU) - 0x8989U;
+            uint packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
+
+            buffer[startingIndex + 1] = (char)(packedResult & 0xFF);
+            buffer[startingIndex] = (char)(packedResult >> 8);
         }
     }
 }

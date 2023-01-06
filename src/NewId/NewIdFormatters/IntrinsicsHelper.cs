@@ -11,39 +11,21 @@ namespace MassTransit.NewIdFormatters
     public static class IntrinsicsHelper
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Vector128ToCharUtf16(Vector128<byte> vec, Span<byte> destination)
-        {
-            Vector128<byte> zero = Vector128<byte>.Zero;
-            Vector128<byte> c0 = Sse2.UnpackLow(vec, zero);
-            Vector128<byte> c1 = Sse2.UnpackHigh(vec, zero);
-
-            MemoryMarshal.Write(destination, ref c0);
-            MemoryMarshal.Write(destination[Vector128<byte>.Count..], ref c1);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector256<byte> ToCharUtf16(Vector128<byte> value)
-        {
-            var widened = Avx2.ConvertToVector256Int16(value);
-            return widened.AsByte();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ToCharUtf16(Vector128<byte> value, Span<byte> destination)
+        public static void Vector128ToCharUtf16(Vector128<byte> value, Span<byte> destination)
         {
             var widened = Avx2.ConvertToVector256Int16(value).AsByte();
             MemoryMarshal.Write(destination, ref widened);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Vec256ToCharUtf16(Vector256<byte> vec, Span<byte> destination)
+        public static void Vector256ToCharUtf16(Vector256<byte> vec, Span<byte> destination)
         {
             Vector256<byte> zero = Vector256<byte>.Zero;
             Vector256<byte> c0 = Avx2.UnpackLow(vec, zero);
             Vector256<byte> c1 = Avx2.UnpackHigh(vec, zero);
 
-            Vector256<byte> t0 = Avx2.Permute2x128(c0, c1, 0x20);
-            Vector256<byte> t1 = Avx2.Permute2x128(c0, c1, 0x31);
+            Vector256<byte> t0 = Avx2.Permute2x128(c0, c1, 0b_10_00_00);
+            Vector256<byte> t1 = Avx2.Permute2x128(c0, c1, 0b_11_00_01);
 
             MemoryMarshal.Write(destination, ref t0);
             MemoryMarshal.Write(destination[Vector256<byte>.Count..], ref t1);
@@ -84,9 +66,7 @@ namespace MassTransit.NewIdFormatters
             var splitVector = Split130Bits5x26(inputVector);
             var encodedVector = EncodeValuesBase32(splitVector, lowLut, upperLut);
 
-            Vec256ToCharUtf16(encodedVector, buffer);
-            //WriteCharUtf16(encodedVector.GetLower(), buffer);
-            //WriteCharUtf16(encodedVector.GetUpper(), buffer[32..]);
+            Vector256ToCharUtf16(encodedVector, buffer);
 
             var byteSpan = MemoryMarshal.Cast<char, byte>(output);
             buffer[..52].CopyTo(byteSpan);

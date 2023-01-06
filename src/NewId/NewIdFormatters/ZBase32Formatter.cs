@@ -1,4 +1,6 @@
 ﻿using System.Threading;
+using System.Runtime.CompilerServices;
+using System;
 #if NET6_0_OR_GREATER
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics;
@@ -22,7 +24,6 @@ namespace MassTransit.NewIdFormatters
             _isUpper = upperCase;
         }
 
-
         public string Format(in byte[] bytes)
         {
 #if NET6_0_OR_GREATER
@@ -32,23 +33,7 @@ namespace MassTransit.NewIdFormatters
                 {
                     var (bytes, isUpperCase) = state;
 
-                    var low = Vector256.Create((byte)'y', (byte)'b', (byte)'n', (byte)'d', (byte)'r', (byte)'f', (byte)'g', (byte)'8', (byte)'e', (byte)'j', (byte)'k', (byte)'m', (byte)'c', (byte)'p', (byte)'q', (byte)'x', (byte)'y', (byte)'b', (byte)'n', (byte)'d', (byte)'r', (byte)'f', (byte)'g', (byte)'8', (byte)'e', (byte)'j', (byte)'k', (byte)'m', (byte)'c', (byte)'p', (byte)'q', (byte)'x');
-
-                    var high = Vector256.Create((byte)'o', (byte)'t', (byte)'1', (byte)'u', (byte)'w', (byte)'i', (byte)'s', (byte)'z', (byte)'a', (byte)'3', (byte)'4', (byte)'5', (byte)'h', (byte)'7', (byte)'6', (byte)'9', (byte)'o', (byte)'t', (byte)'1', (byte)'u', (byte)'w', (byte)'i', (byte)'s', (byte)'z', (byte)'a', (byte)'3', (byte)'4', (byte)'5', (byte)'h', (byte)'7', (byte)'6', (byte)'9');
-
-                    var lowUp = Vector256.Create((byte)'Y', (byte)'B', (byte)'N', (byte)'D', (byte)'R', (byte)'F', (byte)'G', (byte)'8', (byte)'E', (byte)'J', (byte)'K', (byte)'M', (byte)'C', (byte)'P', (byte)'Q', (byte)'X', (byte)'Y', (byte)'B', (byte)'N', (byte)'D', (byte)'R', (byte)'F', (byte)'G', (byte)'8', (byte)'E', (byte)'J', (byte)'K', (byte)'M', (byte)'C', (byte)'P', (byte)'Q', (byte)'X');
-
-                    var highUp = Vector256.Create((byte)'O', (byte)'T', (byte)'1', (byte)'U', (byte)'W', (byte)'I', (byte)'S', (byte)'Z', (byte)'A', (byte)'3', (byte)'4', (byte)'5', (byte)'H', (byte)'7', (byte)'6', (byte)'9', (byte)'O', (byte)'T', (byte)'1', (byte)'U', (byte)'W', (byte)'I', (byte)'S', (byte)'Z', (byte)'A', (byte)'3', (byte)'4', (byte)'5', (byte)'H', (byte)'7', (byte)'6', (byte)'9');
-
-
-                    if (isUpperCase)
-                    {
-                        IntrinsicsHelper.EncodeBase32(bytes, span, lowUp, highUp);
-                    }
-                    else
-                    {
-                        IntrinsicsHelper.EncodeBase32(bytes, span, low, high);
-                    }
+                    EncodeKnownCase(bytes, span, isUpperCase);
                 });
             }
 #endif
@@ -84,5 +69,29 @@ namespace MassTransit.NewIdFormatters
             }
         }
 
+#if NET6_0_OR_GREATER
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void EncodeKnownCase(ReadOnlySpan<byte> source, Span<char> destination, bool isUpperCase)
+        {
+            #region lut
+            var upperCaseLow = Vector256.Create((byte)'Y', (byte)'B', (byte)'N', (byte)'D', (byte)'R', (byte)'F', (byte)'G', (byte)'8', (byte)'E', (byte)'J', (byte)'K', (byte)'M', (byte)'C', (byte)'P', (byte)'Q', (byte)'X', (byte)'Y', (byte)'B', (byte)'N', (byte)'D', (byte)'R', (byte)'F', (byte)'G', (byte)'8', (byte)'E', (byte)'J', (byte)'K', (byte)'M', (byte)'C', (byte)'P', (byte)'Q', (byte)'X');
+
+            var upperCaseHigh = Vector256.Create((byte)'O', (byte)'T', (byte)'1', (byte)'U', (byte)'W', (byte)'I', (byte)'S', (byte)'Z', (byte)'A', (byte)'3', (byte)'4', (byte)'5', (byte)'H', (byte)'7', (byte)'6', (byte)'9', (byte)'O', (byte)'T', (byte)'1', (byte)'U', (byte)'W', (byte)'I', (byte)'S', (byte)'Z', (byte)'A', (byte)'3', (byte)'4', (byte)'5', (byte)'H', (byte)'7', (byte)'6', (byte)'9');
+
+            var lowerCaseLow = Vector256.Create((byte)'y', (byte)'b', (byte)'n', (byte)'d', (byte)'r', (byte)'f', (byte)'g', (byte)'8', (byte)'e', (byte)'j', (byte)'k', (byte)'m', (byte)'c', (byte)'p', (byte)'q', (byte)'x', (byte)'y', (byte)'b', (byte)'n', (byte)'d', (byte)'r', (byte)'f', (byte)'g', (byte)'8', (byte)'e', (byte)'j', (byte)'k', (byte)'m', (byte)'c', (byte)'p', (byte)'q', (byte)'x');
+
+            var lowerCaseHigh = Vector256.Create((byte)'o', (byte)'t', (byte)'1', (byte)'u', (byte)'w', (byte)'i', (byte)'s', (byte)'z', (byte)'a', (byte)'3', (byte)'4', (byte)'5', (byte)'h', (byte)'7', (byte)'6', (byte)'9', (byte)'o', (byte)'t', (byte)'1', (byte)'u', (byte)'w', (byte)'i', (byte)'s', (byte)'z', (byte)'a', (byte)'3', (byte)'4', (byte)'5', (byte)'h', (byte)'7', (byte)'6', (byte)'9');
+            #endregion
+
+            if (isUpperCase)
+            {
+                IntrinsicsHelper.EncodeBase32(source, destination, upperCaseLow, upperCaseHigh);
+            }
+            else
+            {
+                IntrinsicsHelper.EncodeBase32(source, destination, lowerCaseLow, lowerCaseHigh);
+            }
+        }
+#endif
     }
 }
