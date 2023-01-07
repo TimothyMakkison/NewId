@@ -87,6 +87,13 @@
             return Max.ToString(_customDashFormatter);
         }
 
+        private readonly HexFormatter _hexFormatter = new();
+        [Benchmark]
+        public string ToStringHex()
+        {
+            return Max.ToString(_hexFormatter);
+        }
+
         //public class Bit : INewIdFormatter
         //{
         //    public string Format(in byte[] bytes)
@@ -103,12 +110,8 @@
         //}
 
 
-        private readonly HexFormatter _hexFormatter = new();
-        [Benchmark]
-        public string ToStringHex()
-        {
-            return Max.ToString(_hexFormatter);
-        }
+
+
 
         //[Benchmark]
         //public Guid ToGuid()
