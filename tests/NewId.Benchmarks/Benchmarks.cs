@@ -87,20 +87,20 @@
             return Max.ToString(_customDashFormatter);
         }
 
-        public class Bit : INewIdFormatter
-        {
-            public string Format(in byte[] bytes)
-            {
-                return Convert.ToHexString(bytes);
-            }
-        }
+        //public class Bit : INewIdFormatter
+        //{
+        //    public string Format(in byte[] bytes)
+        //    {
+        //        return Convert.ToHexString(bytes);
+        //    }
+        //}
 
-        private readonly Bit _bitFormatter = new();
-        [Benchmark]
-        public string ToStringBitConvert()
-        {
-            return Max.ToString(_bitFormatter);
-        }
+        //private readonly Bit _bitFormatter = new();
+        //[Benchmark]
+        //public string ToStringBitConvert()
+        //{
+        //    return Max.ToString(_bitFormatter);
+        //}
 
 
         private readonly HexFormatter _hexFormatter = new();

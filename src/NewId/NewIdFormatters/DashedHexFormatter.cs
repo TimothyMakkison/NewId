@@ -16,6 +16,7 @@
         readonly int _length;
         readonly char _prefix;
         readonly char _suffix;
+        const uint LowerCaseUInt = 0x2020U;
 
         public DashedHexFormatter(char prefix = '\0', char suffix = '\0', bool upperCase = false)
         {
@@ -28,7 +29,7 @@
                 _length = 38;
             }
 
-            _alpha = upperCase ? 0 : 0x2020U;
+            _alpha = upperCase ? 0 : LowerCaseUInt;
         }
 
         public unsafe string Format(in byte[] bytes)
@@ -36,7 +37,8 @@
 #if NET6_0_OR_GREATER
             if (Avx2.IsSupported && BitConverter.IsLittleEndian)
             {
-                return string.Create(_length, (bytes, _alpha == 'A', _prefix, _suffix), (span, state) =>
+                var isUpperCase = _alpha != LowerCaseUInt;
+                return string.Create(_length, (bytes, isUpperCase, _prefix, _suffix), (span, state) =>
                 {
                     EncodeVector256(span, state);
                 });

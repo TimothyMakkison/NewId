@@ -14,10 +14,11 @@
         INewIdFormatter
     {
         readonly uint _alpha;
+        const uint LowerCaseUInt = 0x2020U;
 
         public HexFormatter(bool upperCase = false)
         {
-            _alpha = upperCase ? 0 : 0x2020U;
+            _alpha = upperCase ? 0 : LowerCaseUInt;
         }
 
         public unsafe string Format(in byte[] bytes)
@@ -27,7 +28,8 @@
 #if NET6_0_OR_GREATER
             if (Avx2.IsSupported && BitConverter.IsLittleEndian)
             {
-                return string.Create(32, (bytes, _alpha == 'A'), (span, state) =>
+                var isUpperCase = _alpha != LowerCaseUInt;
+                return string.Create(32, (bytes, isUpperCase), (span, state) =>
                 {
                     var (bytes, isUpper) = state;
 
