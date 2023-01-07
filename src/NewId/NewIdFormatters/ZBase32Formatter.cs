@@ -1,19 +1,18 @@
-﻿using System.Threading;
-using System.Runtime.CompilerServices;
-using System;
+﻿namespace MassTransit.NewIdFormatters
+{
+    using System.Runtime.CompilerServices;
+    using System;
 #if NET6_0_OR_GREATER
-using System.Runtime.Intrinsics.X86;
-using System.Runtime.Intrinsics;
+    using System.Runtime.Intrinsics.X86;
+    using System.Runtime.Intrinsics;
 #endif
 
-namespace MassTransit.NewIdFormatters
-{
+
     public class ZBase32Formatter : INewIdFormatter
     {
         // taken from analysis done at http://philzimmermann.com/docs/human-oriented-base-32-encoding.txt
         const string LowerCaseChars = "ybndrfg8ejkmcpqxot1uwisza345h769";
         const string UpperCaseChars = "YBNDRFG8EJKMCPQXOT1UWISZA345H769";
-        static readonly ThreadLocal<char[]> _formatBuffer = new ThreadLocal<char[]>(() => new char[26]);
 
         readonly string _chars;
         readonly bool _isUpper;
@@ -24,7 +23,7 @@ namespace MassTransit.NewIdFormatters
             _isUpper = upperCase;
         }
 
-        public string Format(in byte[] bytes)
+        public unsafe string Format(in byte[] bytes)
         {
 #if NET6_0_OR_GREATER
             if (Avx2.IsSupported)
@@ -37,7 +36,7 @@ namespace MassTransit.NewIdFormatters
                 });
             }
 #endif
-            var result = _formatBuffer.Value;
+            var result = stackalloc char[26];
 
             var offset = 0;
             for (var i = 0; i < 3; i++)
@@ -58,7 +57,7 @@ namespace MassTransit.NewIdFormatters
             return new string(result, 0, 26);
         }
 
-        static void ConvertLongToBase32(in char[] buffer, int offset, long value, int count, string chars)
+        static unsafe void ConvertLongToBase32(char* buffer, int offset, long value, int count, string chars)
         {
             for (var i = count - 1; i >= 0; i--)
             {

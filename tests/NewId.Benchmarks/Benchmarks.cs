@@ -52,19 +52,40 @@
         }
 
 
-        //private readonly ZBase32Formatter _zBase32 = new();
-        //[Benchmark]
-        //public string ToStringZBase()
-        //{
-        //    return Max.ToString(_zBase32);
-        //}
+        private readonly ZBase32Formatter _zBase32 = new();
+        [Benchmark]
+        public string ToStringZBase32()
+        {
+            return Max.ToString(_zBase32);
+        }
 
-        //private readonly Base32Formatter _base32 = new();
-        //[Benchmark]
-        //public string ToStringBase32()
-        //{
-        //    return Max.ToString(_base32);
-        //}
+        private readonly Base32Formatter _base32 = new();
+        [Benchmark]
+        public string ToStringBase32()
+        {
+            return Max.ToString(_base32);
+        }
+
+        private readonly Base32Formatter _customFormatter = new("YBNDRFG8EJKMCPQXOT1UWISZA345H769");
+        [Benchmark]
+        public string ToStringCustomBase32()
+        {
+            return Max.ToString(_customFormatter);
+        }
+
+        private readonly DashedHexFormatter _dashedHexFormatter = new();
+        [Benchmark]
+        public string ToStringDashedHex()
+        {
+            return Max.ToString(_dashedHexFormatter);
+        }
+
+        private readonly DashedHexFormatter _customDashFormatter = new('{', '}');
+        [Benchmark]
+        public string ToStringDashBrackets()
+        {
+            return Max.ToString(_customDashFormatter);
+        }
 
         public class Bit : INewIdFormatter
         {
@@ -73,20 +94,6 @@
                 return Convert.ToHexString(bytes);
             }
         }
-
-        //private readonly DashedHexFormatter _dashedHexFormatter = new();
-        //[Benchmark]
-        //public string ToStringDashedHex()
-        //{
-        //    return Max.ToString(_dashedHexFormatter);
-        //}
-
-        //private readonly DashedHexFormatter _customDashFormatter = new('{','}');
-        //[Benchmark]
-        //public string ToStringDashCustom()
-        //{
-        //    return Max.ToString(_customDashFormatter);
-        //}
 
         private readonly Bit _bitFormatter = new();
         [Benchmark]
@@ -102,18 +109,6 @@
         {
             return Max.ToString(_hexFormatter);
         }
-
-        //private readonly Base32Formatter _customFormatter = new("YBNDRFG8EJKMCPQXOT1UWISZA345H769");
-        //[Benchmark]
-        //public string ToStringCustom()
-        //{
-        //    return Max.ToString(_customFormatter);
-        //}
-
-
-
-
-
 
         //[Benchmark]
         //public Guid ToGuid()

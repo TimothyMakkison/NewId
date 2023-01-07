@@ -1,15 +1,15 @@
-﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
+﻿namespace MassTransit.NewIdFormatters
+{
+    using System.Diagnostics;
+    using System.Runtime.CompilerServices;
 #if NET6_0_OR_GREATER
-using System;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
+    using System;
+    using System.Runtime.InteropServices;
+    using System.Runtime.Intrinsics;
+    using System.Runtime.Intrinsics.X86;
 #endif
 
 
-namespace MassTransit.NewIdFormatters
-{
     public class HexFormatter :
         INewIdFormatter
     {
@@ -20,7 +20,7 @@ namespace MassTransit.NewIdFormatters
             _alpha = upperCase ? 0 : 0x2020U;
         }
 
-        public string Format(in byte[] bytes)
+        public unsafe string Format(in byte[] bytes)
         {
             Debug.Assert(bytes.Length == 16);
 
@@ -39,7 +39,7 @@ namespace MassTransit.NewIdFormatters
                 });
             }
 #endif
-            var result = new char[32];
+            var result = stackalloc char[32];
 
             for (int pos = 0; pos < bytes.Length; pos++)
             {
@@ -50,7 +50,7 @@ namespace MassTransit.NewIdFormatters
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void HexToChar(byte value, char[] buffer, int startingIndex, uint casing)
+        static unsafe void HexToChar(byte value, char* buffer, int startingIndex, uint casing)
         {
             uint difference = (((uint)value & 0xF0U) << 4) + ((uint)value & 0x0FU) - 0x8989U;
             uint packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;

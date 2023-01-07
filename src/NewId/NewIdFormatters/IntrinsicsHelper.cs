@@ -1,13 +1,14 @@
 ﻿#if NET6_0_OR_GREATER
-using System.Diagnostics;
-using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
-
 namespace MassTransit.NewIdFormatters
 {
+    using System.Diagnostics;
+    using System;
+    using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
+    using System.Runtime.Intrinsics;
+    using System.Runtime.Intrinsics.X86;
+
+
     public static class IntrinsicsHelper
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

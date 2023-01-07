@@ -1,7 +1,6 @@
 ﻿namespace MassTransit.NewIdFormatters
 {
     using System;
-    using System.Threading;
 #if NET6_0_OR_GREATER
     using System.Runtime.InteropServices;
     using System.Runtime.Intrinsics;
@@ -15,7 +14,6 @@
     {
         const string LowerCaseChars = "abcdefghijklmnopqrstuvwxyz234567";
         const string UpperCaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-        static readonly ThreadLocal<char[]> _formatBuffer = new ThreadLocal<char[]>(() => new char[26]);
 
         readonly string _chars;
         readonly bool _isCustom;
@@ -51,7 +49,7 @@
 #endif
         }
 
-        public string Format(in byte[] bytes)
+        public unsafe string Format(in byte[] bytes)
         {
 #if NET6_0_OR_GREATER
             if (Avx2.IsSupported)
@@ -71,7 +69,7 @@
                 });
             }
 #endif
-            var result = _formatBuffer.Value;
+            var result = stackalloc char[26];
 
             var offset = 0;
             for (var i = 0; i < 3; i++)
@@ -93,7 +91,7 @@
             return new string(result, 0, 26);
         }
 
-        static void ConvertLongToBase32(in char[] buffer, int offset, long value, int count, string chars)
+        static unsafe void ConvertLongToBase32(char* buffer, int offset, long value, int count, string chars)
         {
             for (var i = count - 1; i >= 0; i--)
             {

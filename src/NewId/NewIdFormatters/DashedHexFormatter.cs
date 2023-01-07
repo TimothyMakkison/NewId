@@ -1,13 +1,14 @@
-﻿using System;
+﻿namespace MassTransit.NewIdFormatters
+{
+    using System;
 #if NET6_0_OR_GREATER
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
+    using System.Runtime.InteropServices;
+    using System.Runtime.CompilerServices;
+    using System.Runtime.Intrinsics;
+    using System.Runtime.Intrinsics.X86;
 #endif
 
-namespace MassTransit.NewIdFormatters
-{
+
     public class DashedHexFormatter :
         INewIdFormatter
     {
@@ -30,24 +31,18 @@ namespace MassTransit.NewIdFormatters
             _alpha = upperCase ? 0 : 0x2020U;
         }
 
-        public string Format(in byte[] bytes)
+        public unsafe string Format(in byte[] bytes)
         {
-//#if NET6_0_OR_GREATER
-//            if (Avx2.IsSupported && BitConverter.IsLittleEndian)
-//            {
-//                return string.Create(_length, (bytes, _alpha == 'A', _prefix, _suffix), (span, state) =>
-//                {
-//                    EncodeDashedHex(span, state);
-//                });
-//            }
-//#endif
-            return EncodeScalar(bytes);
-         
-        }
-
-        public string EncodeScalar(in byte[] bytes)
-        {
-            var result = new char[_length];
+#if NET6_0_OR_GREATER
+            if (Avx2.IsSupported && BitConverter.IsLittleEndian)
+            {
+                return string.Create(_length, (bytes, _alpha == 'A', _prefix, _suffix), (span, state) =>
+                {
+                    EncodeVector256(span, state);
+                });
+            }
+#endif
+            var result = stackalloc char[_length];
 
             var i = 0;
             var offset = 0;
@@ -142,7 +137,7 @@ namespace MassTransit.NewIdFormatters
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        static void HexToChar(byte value, char[] buffer, int startingIndex, uint casing)
+        static unsafe void HexToChar(byte value, char* buffer, int startingIndex, uint casing)
         {
             uint difference = (((uint)value & 0xF0U) << 4) + ((uint)value & 0x0FU) - 0x8989U;
             uint packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
